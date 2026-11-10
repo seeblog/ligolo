@@ -69,21 +69,14 @@ func RandBytes(n int) []byte {
 	return b
 }
 
-// BackoffDelay returns a jittered exponential backoff delay for the given
-// connection attempt (1-based). Base grows 1s, 2s, 4s ... capped at 300s,
-// each step jittered by +/-40%.
+// BackoffDelay returns a randomized reconnect delay: a fixed 10s base with
+// +/-40% jitter (6-14s). The jitter defeats periodic-reconnect detection
+// while average recovery latency matches the original fixed 10s.
 func BackoffDelay(attempt int) time.Duration {
 	if attempt < 1 {
 		attempt = 1
 	}
-	shift := attempt - 1
-	if shift > 9 {
-		shift = 9
-	}
-	base := time.Second << uint(shift)
-	if base > 300*time.Second {
-		base = 300 * time.Second
-	}
+	base := 10 * time.Second
 	jitter := time.Duration(float64(base) * 0.4)
 	return base - jitter + RandDuration(0, 2*jitter)
 }
